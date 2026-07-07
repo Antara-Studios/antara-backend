@@ -13,4 +13,14 @@ async function verifyFirebaseToken(idToken) {
     };
 }
 
-export { verifyFirebaseToken };
+async function verifyGoogleToken(idToken) {
+    const decoded = await auth.verifyIdToken(idToken);
+    if (!decoded.email) throw new Error('No email found in Google token');
+    return {
+        uid: decoded.uid,
+        email: decoded.email,
+        name: decoded.name || '',
+    };
+}
+
+export { verifyFirebaseToken, verifyGoogleToken };
