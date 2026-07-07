@@ -34,6 +34,12 @@ const orderSchema = new mongoose.Schema({
     receipt: {
         type: String,
     },
+    templateId: {
+        type: Number,
+    },
+    expiresAt: {
+        type: Date,
+    },
 }, { timestamps: true });
 
 export const Order = mongoose.model("Order", orderSchema);
