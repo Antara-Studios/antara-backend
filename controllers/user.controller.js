@@ -4,6 +4,7 @@ import { ApiError } from "../utilits/ApiError.js";
 import { User } from "../models/User.model.js";
 import jwt from "jsonwebtoken";
 import crypto from "crypto";
+import { verifyGoogleToken } from "../services/googleAuth.services.js";
 //Token generation
 const generateAccessAndRefereshTokens = async (userId) => {
     try {
@@ -195,4 +196,71 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
     }
 });
 
-export { registerUser, loginUser, logoutUser, refreshAccessToken };
+// Google Login controller
+const googleLogin = asyncHandler(async (req, res) => {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+        throw new ApiError(400, "Google ID Token is required");
+    }
+
+    let payload;
+    try {
+        payload = await verifyGoogleToken(idToken);
+    } catch (error) {
+        throw new ApiError(401, error.message || "Invalid Google ID Token");
+    }
+
+    const { googleId, email, fullName } = payload;
+
+    // Find user by googleId
+    let user = await User.findOne({ googleId });
+
+    if (!user) {
+        // If not found by googleId, check if a user with that email already exists
+        if (email) {
+            user = await User.findOne({ email });
+        }
+
+        if (user) {
+            // Link googleId to existing user
+            user.googleId = googleId;
+            await user.save({ validateBeforeSave: false });
+        } else {
+            // Create a new user
+            user = await User.create({
+                fullName,
+                email,
+                googleId,
+            });
+        }
+    }
+
+    const { accessToken, refreshToken } = await generateAccessAndRefereshTokens(user._id);
+    user.refreshToken = refreshToken;
+    user.lastLogin = new Date();
+    await user.save({ validateBeforeSave: false });
+
+    const loggedInUser = await User.findById(user._id).select("-password -refreshToken");
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    };
+
+    return res
+        .status(200)
+        .cookie("accessToken", accessToken, options)
+        .cookie("refreshToken", refreshToken, options)
+        .json(
+            new ApiResponse(
+                200,
+                {
+                    user: loggedInUser, accessToken, refreshToken
+                },
+                "User logged in Successfully with Google"
+            )
+        );
+});
+
+export { registerUser, loginUser, logoutUser, refreshAccessToken, googleLogin };

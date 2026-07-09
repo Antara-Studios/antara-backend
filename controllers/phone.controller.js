@@ -1,10 +1,11 @@
 import { asyncHandler } from "../utilits/asyncHandler.js";
 import { ApiResponse } from "../utilits/ApiResponse.js";
 import { ApiError } from "../utilits/ApiError.js";
-import { verifyFirebaseToken } from "../services/firebase.services.js";
+// import { verifyFirebaseToken } from "../services/firebase.services.js";
 import { User } from "../models/User.model.js";
 
 const phoneController = asyncHandler(async (req, res) => {
+    /*
     const { idToken } = req.body;
     if (!idToken) throw new ApiError(400, "idToken is required");
 
@@ -29,5 +30,7 @@ const phoneController = asyncHandler(async (req, res) => {
         userId: user._id,
         phoneVerified: user.phoneVerified,
     }, "Phone verified successfully"));
+    */
+    throw new ApiError(403, "OTP mobile login is disabled. Please use Google Login.");
 });
 export default phoneController;

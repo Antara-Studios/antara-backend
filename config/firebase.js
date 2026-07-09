@@ -1,3 +1,4 @@
+/*
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
@@ -10,3 +11,5 @@ initializeApp({
 });
 
 export const auth = getAuth();
+*/
+export const auth = null;

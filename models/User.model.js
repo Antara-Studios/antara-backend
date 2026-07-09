@@ -13,6 +13,11 @@ const userSchema = new mongoose.Schema({
         unique: true,
         sparse: true
     },
+    googleId: {
+        type: String,
+        unique: true,
+        sparse: true
+    },
     email: {
         type: String,
         unique: true,
@@ -34,7 +39,9 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: [true, 'Password is required'],
+        required: function() {
+            return !this.googleId;
+        },
         select: false,
     },
     refreshToken: {
@@ -73,7 +80,8 @@ userSchema.methods.generateAccessToken = function () {
             _id: this._id,
             phone: this.phone,
             fullName: this.fullName,
-            firebaseUid: this.firebaseUid
+            firebaseUid: this.firebaseUid,
+            googleId: this.googleId
         },
         process.env.ACCESS_TOKEN_SECRET,
         {

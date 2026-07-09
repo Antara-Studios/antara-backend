@@ -1,6 +1,7 @@
-import { auth } from '../config/firebase.js';
+// import { auth } from '../config/firebase.js';
 
 async function verifyFirebaseToken(idToken) {
+    /*
     // Firebase verifies the OTP was correct and gives you a decoded token
     const decoded = await auth.verifyIdToken(idToken);
 
@@ -11,6 +12,8 @@ async function verifyFirebaseToken(idToken) {
         uid: decoded.uid,               // Firebase's unique user ID
         phone: decoded.phone_number,    // E.164 phone number
     };
+    */
+    throw new Error('Firebase token verification is disabled.');
 }
 
 export { verifyFirebaseToken };
