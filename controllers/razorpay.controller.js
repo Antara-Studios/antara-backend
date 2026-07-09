@@ -6,7 +6,7 @@ import { Order } from '../models/orders.model.js';
 // Create a Razorpay order
 const createOrder = async (req, res) => {
     try {
-        const { amount } = req.body;
+        const { amount, templateId } = req.body;
         const userId = req.user._id; // set by verifyJWT middleware
 
         if (!amount || isNaN(amount) || amount <= 0) {
@@ -29,6 +29,7 @@ const createOrder = async (req, res) => {
             currency: order.currency,
             receipt: order.receipt,
             status: 'created',
+            templateId: templateId || null,
         });
 
         return res.status(201).json({ success: true, order });
@@ -56,12 +57,14 @@ const verifyPayment = async (req, res) => {
         const isValid = expectedSignature === razorpay_signature;
 
         if (isValid) {
+            const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year from now
             await Order.findOneAndUpdate(
                 { razorpayOrderId: razorpay_order_id, user: req.user._id },
                 {
                     razorpayPaymentId: razorpay_payment_id,
                     razorpaySignature: razorpay_signature,
                     status: 'paid',
+                    expiresAt,
                 }
             );
             return res.status(200).json({ success: true, message: 'Payment verified successfully' });
@@ -78,4 +81,32 @@ const verifyPayment = async (req, res) => {
     }
 };
 
-export { createOrder, verifyPayment };
+// Get all paid purchases for the current user
+const getPurchases = async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        const orders = await Order.find({
+            user: userId,
+            status: 'paid',
+            templateId: { $ne: null },
+        })
+        .select('templateId amount purchasedAt expiresAt razorpayOrderId createdAt')
+        .sort({ createdAt: -1 });
+
+        const purchases = orders.map((order) => ({
+            templateId: order.templateId,
+            amount: order.amount,
+            purchasedAt: order.createdAt,
+            expiresAt: order.expiresAt,
+            razorpayOrderId: order.razorpayOrderId,
+        }));
+
+        return res.status(200).json({ success: true, data: purchases });
+    } catch (err) {
+        console.error('getPurchases error:', err);
+        return res.status(500).json({ success: false, error: 'Failed to fetch purchases' });
+    }
+};
+
+export { createOrder, verifyPayment, getPurchases };
